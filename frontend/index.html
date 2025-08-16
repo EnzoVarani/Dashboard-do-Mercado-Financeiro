@@ -129,7 +129,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
     <script>
         class DashboardAPI {
-            constructor() { this.baseURL = 'dashboard-do-mercado-financeiro-production.up.railway.app'; }
+            constructor() { this.baseURL = 'https://dashboard-do-mercado-financeiro-production.up.railway.app'; }
             async #fetchData(endpoint) {
                 try {
                     const response = await fetch(`${this.baseURL}${endpoint}`, { signal: AbortSignal.timeout(25000) });
