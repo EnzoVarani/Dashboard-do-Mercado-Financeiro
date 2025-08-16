@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard do Mercado Financeiro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-primary: #1a1a2e; --bg-secondary: #16213e; --bg-card: #0f3460;
+            --accent-purple: #e94560; --accent-green: #00ff88; --accent-red: #ff4757; --accent-yellow: #feca57;
+            --text-primary: #ffffff; --text-secondary: #a8a8a8;
+            --font-main: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%); color: var(--text-primary); font-family: var(--font-main); min-height: 100vh; }
+        .dashboard-container { padding: 20px; max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; min-height: 100vh; }
+        .main-content { flex: 1; }
+        .header { margin-bottom: 30px; }
+        .stock-ticker { background: var(--bg-card); padding: 15px; border-radius: 15px; margin-bottom: 20px; overflow-x: auto; white-space: nowrap; min-height: 54px; display: flex; align-items: center; }
+        .ticker-item { display: inline-block; margin-right: 40px; font-size: 14px; }
+        .ticker-positive { color: var(--accent-green); }
+        .ticker-negative { color: var(--accent-red); }
+        .main-stock-info-container { margin-bottom: 20px; }
+        .main-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .card { background: var(--bg-card); border: none; border-radius: 20px; padding: 25px; backdrop-filter: blur(10px); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 15px 40px rgba(233, 69, 96, 0.2); }
+        .card-title { color: var(--text-secondary); font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+        .card-value { font-size: 2.5rem; font-weight: 700; margin-bottom: 10px; }
+        .card-change { font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .positive { color: var(--accent-green); }
+        .negative { color: var(--accent-red); }
+        .neutral { color: var(--accent-yellow); }
+        .main-chart-container { background: var(--bg-card); border-radius: 20px; padding: 30px; margin-bottom: 30px; }
+        .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; flex-wrap: wrap; gap: 15px; }
+        .chart-title-section { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .chart-title { font-size: 1.4rem; font-weight: 600; }
+        .chart-period-change { font-size: 1rem; font-weight: 600; padding: 5px 10px; border-radius: 8px; }
+        .time-filters { display: flex; gap: 10px; }
+        .time-filter { padding: 8px 16px; border: 1px solid var(--text-secondary); background: transparent; color: var(--text-primary); border-radius: 8px; cursor: pointer; transition: all 0.3s ease; font-size: 14px; }
+        .time-filter:hover, .time-filter.active { background: var(--accent-purple); border-color: var(--accent-purple); }
+        .chart-canvas-container { position: relative; height: 400px; }
+        .chart-spinner-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(15, 52, 96, 0.7); display: flex; align-items: center; justify-content: center; border-radius: 15px; z-index: 10; transition: opacity 0.3s ease; }
+        .chart-spinner-overlay.hidden { opacity: 0; pointer-events: none; }
+        .indicators-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .indicator-card { text-align: center; }
+        .indicator-value { font-size: 1.8rem; font-weight: 700; margin: 10px 0; }
+        .loading-spinner { display: inline-block; width: 40px; height: 40px; border: 4px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: var(--accent-purple); animation: spin 1s ease-in-out infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .last-update { text-align: center; color: var(--text-secondary); font-size: 14px; margin-top: 20px; }
+        .page-footer { text-align: center; padding: 20px; margin-top: 40px; color: var(--text-secondary); font-family: var(--font-main); font-size: 1.5rem; font-weight: 400; letter-spacing: 0.5px; }
+        @media (max-width: 768px) { .dashboard-container { padding: 15px; } .main-grid { grid-template-columns: 1fr; } .card-value { font-size: 2rem; } .time-filters { flex-wrap: wrap; justify-content: center; } }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <main class="main-content">
+            <div class="header">
+                <h1 class="text-center mb-4"><i class="fas fa-chart-line me-3" style="color: var(--accent-purple);"></i> Dashboard do Mercado Financeiro</h1>
+                <div id="ticker-bar-container" class="stock-ticker"></div>
+            </div>
+            <div class="main-stock-info-container">
+                <div class="card">
+                    <div id="stock-name" class="card-title"></div>
+                    <div id="stock-price" class="card-value"></div>
+                    <div id="stock-change" class="card-change"></div>
+                </div>
+            </div>
+            <div class="main-grid">
+                <div class="card">
+                    <div class="card-title"><i class="fas fa-exchange-alt"></i> Volume</div>
+                    <div id="stock-volume" class="card-value"></div>
+                </div>
+                <div class="card">
+                    <div class="card-title"><i class="fas fa-calendar-day"></i> Máxima Hoje</div>
+                    <div id="stock-high" class="card-value"></div>
+                </div>
+                <div class="card">
+                    <div class="card-title"><i class="fas fa-calendar-day"></i> Mínima Hoje</div>
+                    <div id="stock-low" class="card-value"></div>
+                </div>
+            </div>
+            <div class="main-chart-container">
+                <div class="chart-header">
+                    <div class="chart-title-section">
+                        <h3 id="chart-main-title" class="chart-title"></h3>
+                        <span id="chart-period-change" class="chart-period-change"></span>
+                    </div>
+                    <div class="time-filters">
+                        <button class="time-filter" data-range="1d">1D</button>
+                        <button class="time-filter" data-range="5d">5D</button>
+                        <button class="time-filter active" data-range="1mo">1M</button>
+                        <button class="time-filter" data-range="3mo">3M</button>
+                    </div>
+                </div>
+                <div class="chart-canvas-container">
+                    <canvas id="priceChart"></canvas>
+                    <div id="chart-spinner-overlay" class="chart-spinner-overlay">
+                        <div class="loading-spinner"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="indicators-grid">
+                <div class="card indicator-card">
+                    <div class="card-title"><i class="fas fa-chart-line"></i> Média Móvel 20 dias</div>
+                    <div id="indicator-sma20" class="indicator-value">--</div>
+                    <div id="indicator-sma20-label" class="card-change"></div>
+                </div>
+                <div class="card indicator-card">
+                    <div class="card-title"><i class="fas fa-tachometer-alt"></i> RSI (14)</div>
+                    <div id="indicator-rsi" class="indicator-value">--</div>
+                    <div id="indicator-rsi-label" class="card-change"></div>
+                </div>
+                <div class="card indicator-card">
+                    <div class="card-title"><i class="fas fa-coins"></i> Valor de Mercado</div>
+                    <div id="indicator-mktcap" class="indicator-value">--</div>
+                </div>
+            </div>
+        </main>
+        <footer class="page-footer">
+            Desenvolvido por Enzo Varani
+        </footer>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    <script>
+        class DashboardAPI {
+            constructor() { this.baseURL = 'http://localhost:3001/api'; }
+            async #fetchData(endpoint) {
+                try {
+                    const response = await fetch(`${this.baseURL}${endpoint}`, { signal: AbortSignal.timeout(25000) });
+                    if (!response.ok) { throw new Error(`Erro na resposta da API: ${response.status}`); }
+                    const result = await response.json();
+                    if (!result.success) { throw new Error(result.message || 'Erro desconhecido na API'); }
+                    return result.data;
+                } catch (error) {
+                    console.error(`❌ Erro ao buscar dados de ${endpoint}:`, error);
+                    this.showErrorState(error.message);
+                    throw error;
+                }
+            }
+            fetchAllStocks(symbols) { return this.#fetchData(`/stocks/multiple?symbols=${symbols.join(',')}`); }
+            fetchHistoricalData(symbol, range) { return this.#fetchData(`/stocks/${symbol}/historical?range=${range}`); }
+            showErrorState(errorMessage) {
+                const errorId = `error-toast-${Date.now()}`;
+                const errorNotification = document.createElement('div');
+                errorNotification.id = errorId;
+                errorNotification.innerHTML = `<i class="fas fa-exclamation-triangle"></i><span>Erro: ${errorMessage}</span>`;
+                errorNotification.style.cssText = `position: fixed; top: 20px; right: 20px; background: var(--accent-red); color: white; padding: 15px 20px; border-radius: 10px; z-index: 1000; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);`;
+                document.body.appendChild(errorNotification);
+                setTimeout(() => errorNotification.remove(), 5000);
+            }
+        }
+        class DashboardUI {
+            constructor() {
+                this.elements = {
+                    tickerBar: '#ticker-bar-container', companyName: '#stock-name', currentPrice: '#stock-price',
+                    priceChange: '#stock-change', volume: '#stock-volume', high: '#stock-high',
+                    low: '#stock-low', lastUpdate: '.last-update', chartPeriodChange: '#chart-period-change',
+                    chartTitle: '#chart-main-title', indicatorSma20: '#indicator-sma20', indicatorSma20Label: '#indicator-sma20-label',
+                    indicatorRsi: '#indicator-rsi', indicatorRsiLabel: '#indicator-rsi-label',
+                    indicatorMktcap: '#indicator-mktcap'
+                };
+                this.chartInstance = null;
+            }
+            renderTickerBar(stockDataList) {
+                const container = document.querySelector(this.elements.tickerBar);
+                if (!container) return;
+                container.innerHTML = '';
+                if (!stockDataList || stockDataList.length === 0) {
+                    container.innerHTML = '<span class="text-secondary">Não foi possível carregar dados do ticker.</span>';
+                    return;
+                }
+                stockDataList.forEach(item => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'ticker-item';
+                    const changePercent = item.changePercent || 0;
+                    const isPositive = changePercent >= 0;
+                    const changeClass = isPositive ? 'ticker-positive' : 'ticker-negative';
+                    const icon = isPositive ? 'fa-arrow-up' : 'fa-arrow-down';
+                    const priceFormatted = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price || 0);
+                    itemDiv.innerHTML = `<strong>${item.symbol}</strong> <span class="${changeClass}">${priceFormatted} <i class="fas ${icon}"></i> ${changePercent.toFixed(2)}%</span>`;
+                    container.appendChild(itemDiv);
+                });
+            }
+            updateDisplay(stockData) {
+                try {
+                    this.updateCompanyInfo(stockData);
+                    this.updatePriceInfo(stockData);
+                    this.updateVolumeInfo(stockData);
+                    this.updateHighLowInfo(stockData);
+                    this.updateLastUpdate(stockData);
+                    this.updateChartTitle(stockData);
+                    this.updateIndicators(stockData);
+                } catch (error) { console.error('❌ Erro ao atualizar interface:', error); }
+            }
+            updateIndicators(data) {
+                const sma20El = document.querySelector(this.elements.indicatorSma20);
+                const sma20LabelEl = document.querySelector(this.elements.indicatorSma20Label);
+                if (data.sma20 && data.price) {
+                    sma20El.textContent = this.formatPrice(data.sma20);
+                    const isAbove = data.price > data.sma20;
+                    sma20LabelEl.className = `card-change ${isAbove ? 'positive' : 'negative'}`;
+                    sma20LabelEl.innerHTML = `<i class="fas ${isAbove ? 'fa-arrow-up' : 'fa-arrow-down'}"></i> ${isAbove ? 'Acima da Média' : 'Abaixo da Média'}`;
+                } else { sma20El.textContent = '--'; sma20LabelEl.innerHTML = ''; }
+
+                const rsiEl = document.querySelector(this.elements.indicatorRsi);
+                const rsiLabelEl = document.querySelector(this.elements.indicatorRsiLabel);
+                if (data.rsi14) {
+                    rsiEl.textContent = data.rsi14.toFixed(2);
+                    let rsiLabel = 'Neutro'; let rsiClass = 'neutral';
+                    if (data.rsi14 > 70) { rsiLabel = 'Sobrecomprado'; rsiClass = 'negative'; }
+                    if (data.rsi14 < 30) { rsiLabel = 'Sobrevendido'; rsiClass = 'positive'; }
+                    rsiLabelEl.className = `card-change ${rsiClass}`;
+                    rsiLabelEl.textContent = rsiLabel;
+                } else { rsiEl.textContent = '--'; rsiLabelEl.innerHTML = ''; }
+
+                const mktcapEl = document.querySelector(this.elements.indicatorMktcap);
+                if (data.marketCap) {
+                    mktcapEl.textContent = this.formatVolume(data.marketCap, true);
+                } else { mktcapEl.textContent = '--'; }
+            }
+            renderChart(historicalData) {
+                this.updateChartPeriodChange(historicalData);
+                const ctx = document.getElementById('priceChart').getContext('2d');
+                if (!ctx) return;
+                const labels = historicalData.map(data => new Date(data.date).toLocaleDateString('pt-BR'));
+                const prices = historicalData.map(data => data.price);
+                if (this.chartInstance) { this.chartInstance.destroy(); }
+                const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                gradient.addColorStop(0, 'rgba(233, 69, 96, 0.5)');
+                gradient.addColorStop(1, 'rgba(233, 69, 96, 0)');
+                this.chartInstance = new Chart(ctx, {
+                    type: 'line', data: { labels: labels, datasets: [{
+                        label: 'Preço', data: prices, borderColor: 'rgba(233, 69, 96, 1)', backgroundColor: gradient,
+                        borderWidth: 2, pointRadius: 0, pointHoverRadius: 6, tension: 0.1, fill: true }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false, callbacks: { label: (context) => `Preço: R$ ${context.parsed.y.toFixed(2)}` } } },
+                        scales: { x: { grid: { color: 'rgba(255,255,255,0.1)' } }, y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { callback: (value) => 'R$ ' + value.toFixed(2) } } }
+                    }
+                });
+            }
+            updateChartPeriodChange(historicalData) {
+                const changeElement = document.querySelector(this.elements.chartPeriodChange);
+                if (!changeElement || historicalData.length < 2) {
+                    if (changeElement) changeElement.innerHTML = '';
+                    return;
+                }
+                const startPrice = historicalData[0].price;
+                const endPrice = historicalData[historicalData.length - 1].price;
+                const percentChange = ((endPrice - startPrice) / startPrice) * 100;
+                const isPositive = percentChange >= 0;
+                const colorClass = isPositive ? 'positive' : 'negative';
+                const sign = isPositive ? '+' : '';
+                changeElement.className = `chart-period-change ${colorClass}`;
+                changeElement.innerHTML = `<i class="fas fa-chart-line"></i> ${sign}${percentChange.toFixed(2)}% no período`;
+            }
+            showChartSpinner() { document.getElementById('chart-spinner-overlay').classList.remove('hidden'); }
+            hideChartSpinner() { document.getElementById('chart-spinner-overlay').classList.add('hidden'); }
+            formatPrice(price) { if (typeof price !== 'number') return '--'; return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price); }
+            formatVolume(volume, isMarketCap = false) {
+                if (!volume) return '--';
+                if (isMarketCap && volume >= 1e9) return `R$ ${(volume / 1e9).toFixed(2)} B`;
+                if (volume >= 1e6) return `${(volume / 1e6).toFixed(1)} M`;
+                if (volume >= 1e3) return `${(volume / 1e3).toFixed(1)} K`;
+                return volume.toString();
+            }
+            updateCompanyInfo(data) { document.querySelector(this.elements.companyName).innerHTML = `<i class="fas fa-building"></i> ${data.name} - ${data.symbol}`; }
+            updatePriceInfo(data) {
+                document.querySelector(this.elements.currentPrice).textContent = this.formatPrice(data.price);
+                const changeEl = document.querySelector(this.elements.priceChange);
+                const isPositive = data.change >= 0;
+                changeEl.className = `card-change ${isPositive ? 'positive' : 'negative'}`;
+                changeEl.innerHTML = `<i class="fas ${isPositive ? 'fa-arrow-up' : 'fa-arrow-down'}"></i> ${isPositive ? '+' : ''}${this.formatPrice(data.change)} (${isPositive ? '+' : ''}${data.changePercent.toFixed(2)}%)`;
+            }
+            updateVolumeInfo(data) { document.querySelector(this.elements.volume).textContent = this.formatVolume(data.volume); }
+            updateHighLowInfo(data) {
+                document.querySelector(this.elements.high).textContent = this.formatPrice(data.high);
+                document.querySelector(this.elements.low).textContent = this.formatPrice(data.low);
+            }
+            updateLastUpdate(data) {
+                const el = document.querySelector(this.elements.lastUpdate);
+                if (el) {
+                    const updateTime = new Date(data.lastUpdate);
+                    const status = data.isFallback ? '<span class="text-warning">Dados Simulados</span>' : '<span class="text-success">Mercado Aberto</span>';
+                    el.innerHTML = `<i class="fas fa-sync-alt"></i> Última atualização: ${updateTime.toLocaleString('pt-BR')} | ${status} | Próxima atualização em: <span id="countdown">30s</span>`;
+                }
+            }
+            updateChartTitle(data){ document.querySelector(this.elements.chartTitle).innerHTML = `<i class="fas fa-chart-area me-2"></i> Histórico de Preços - ${data.symbol}`; }
+        }
+        class FinancialDashboard {
+            constructor(initialSymbol = 'PETR4') {
+                this.api = new DashboardAPI();
+                this.ui = new DashboardUI();
+                this.currentSymbol = initialSymbol;
+                this.tickerSymbols = ['ITUB4', 'VALE3', 'ABEV3', 'BBDC4', 'BPAC11'];
+                this.countdown = 60;
+                this.updateInterval = null;
+            }
+            async initialize() {
+                this.setupEventListeners();
+                this.ui.showChartSpinner();
+                await this.fullUpdate();
+                this.startAutoUpdate();
+            }
+            async fullUpdate() {
+                try {
+                    const allSymbolsToFetch = [...new Set([this.currentSymbol, ...this.tickerSymbols])];
+                    const allStockData = await this.api.fetchAllStocks(allSymbolsToFetch);
+                    const mainStockData = allStockData.find(stock => stock.symbol === this.currentSymbol);
+                    const tickerStockData = allStockData.filter(stock => stock.symbol !== this.currentSymbol);
+                    const activeRange = document.querySelector('.time-filter.active')?.getAttribute('data-range') || '1mo';
+                    const chartPromise = this.api.fetchHistoricalData(this.currentSymbol, activeRange).catch(e => []);
+                    
+                    this.ui.renderTickerBar(tickerStockData);
+                    if (mainStockData) {
+                        this.ui.updateDisplay(mainStockData);
+                    }
+                    
+                    const chartData = await chartPromise;
+                    this.ui.renderChart(chartData);
+                } catch (error) {
+                    console.error("Falha na atualização completa dos dados.", error);
+                } finally {
+                    this.ui.hideChartSpinner();
+                }
+            }
+            async handleRangeChange(range) {
+                this.ui.showChartSpinner();
+                const historicalData = await this.api.fetchHistoricalData(this.currentSymbol, range).catch(e => []);
+                this.ui.renderChart(historicalData);
+                this.ui.hideChartSpinner();
+            }
+            startAutoUpdate() {
+                if (this.updateInterval) clearInterval(this.updateInterval);
+                this.updateInterval = setInterval(() => {
+                    this.countdown--;
+                    const el = document.getElementById('countdown');
+                    if (el) el.textContent = this.countdown + 's';
+                    if (this.countdown <= 0) {
+                        this.countdown = 60;
+                        this.fullUpdate();
+                    }
+                }, 1000);
+            }
+            setupEventListeners() {
+                document.querySelectorAll('.time-filter').forEach(filter => {
+                    filter.addEventListener('click', (e) => {
+                        document.querySelectorAll('.time-filter').forEach(f => f.classList.remove('active'));
+                        e.target.classList.add('active');
+                        this.handleRangeChange(e.target.getAttribute('data-range'));
+                    });
+                });
+            }
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            const dashboard = new FinancialDashboard();
+            dashboard.initialize();
+        });
+    </script>
+</body>
+</html>
