@@ -57,7 +57,7 @@ A construção deste dashboard foi uma jornada de aprendizado imensa, principalm
 
 ```bash
 # 1. Clone o repositório
-git clone [https://github.com/seu-usuario/financial-dashboard.git]
+git clone https://github.com/EnzoVarani/Dashboard-do-Mercado-Financeiro
 cd pr
 
 # 2. Configure e rode o Backend
