@@ -11,11 +11,9 @@ Uma plataforma de visualização de dados do mercado financeiro em tempo real, c
 <table align="center">
   <tr>
     <td align="center">
-      <p><strong>Visão Desktop</strong></p>
       <img src="./docs/screenshot.png" width="500px">
     </td>
     <td align="center">
-      <p><strong>Visão Mobile</strong></p>
       <img src="./docs/screenshot2.png" width="500px">
     </td>
   </tr>
