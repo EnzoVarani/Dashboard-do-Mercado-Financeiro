@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard do Mercado Financeiro</title>
+    <title>Dashboard de Mercado Financeiro</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
@@ -31,7 +31,7 @@
         .card { background: var(--bg-card); border: none; border-radius: 20px; padding: 25px; backdrop-filter: blur(10px); box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); transition: transform 0.3s ease, box-shadow 0.3s ease; }
         .card:hover { transform: translateY(-5px); box-shadow: 0 15px 40px rgba(233, 69, 96, 0.2); }
         .card-title { color: var(--text-secondary); font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
-        .card-value { font-size: 2.5rem; font-weight: 700; margin-bottom: 10px; }
+        .card-value { font-size: 2.5rem; font-weight: 700; margin-bottom: 10px; color: var(--text-primary); }
         .card-change { font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
         .positive { color: var(--accent-green); }
         .negative { color: var(--accent-red); }
@@ -45,23 +45,25 @@
         .time-filter { padding: 8px 16px; border: 1px solid var(--text-secondary); background: transparent; color: var(--text-primary); border-radius: 8px; cursor: pointer; transition: all 0.3s ease; font-size: 14px; }
         .time-filter:hover, .time-filter.active { background: var(--accent-purple); border-color: var(--accent-purple); }
         .chart-canvas-container { position: relative; height: 400px; }
-        .chart-spinner-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(15, 52, 96, 0.7); display: flex; align-items: center; justify-content: center; border-radius: 15px; z-index: 10; transition: opacity 0.3s ease; }
-        .chart-spinner-overlay.hidden { opacity: 0; pointer-events: none; }
+        .chart-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(15, 52, 96, 0.7); display: flex; flex-direction:column; align-items: center; justify-content: center; border-radius: 15px; z-index: 10; transition: opacity 0.3s ease; text-align: center; }
+        .chart-overlay.hidden { opacity: 0; pointer-events: none; }
         .indicators-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
         .indicator-card { text-align: center; }
-        .indicator-value { font-size: 1.8rem; font-weight: 700; margin: 10px 0; }
+        .indicator-value { font-size: 2.5rem; font-weight: 700; margin: 10px 0; color: var(--text-primary); }
         .loading-spinner { display: inline-block; width: 40px; height: 40px; border: 4px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: var(--accent-purple); animation: spin 1s ease-in-out infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .last-update { text-align: center; color: var(--text-secondary); font-size: 14px; margin-top: 20px; }
-        .page-footer { text-align: center; padding: 20px; margin-top: 40px; color: var(--text-secondary); font-family: var(--font-main); font-size: 1.5rem; font-weight: 400; letter-spacing: 0.5px; }
-        @media (max-width: 768px) { .dashboard-container { padding: 15px; } .main-grid { grid-template-columns: 1fr; } .card-value { font-size: 2rem; } .time-filters { flex-wrap: wrap; justify-content: center; } }
+        .page-footer { text-align: center; padding: 20px; margin-top: 40px; color: var(--text-secondary); font-family: var(--font-main); font-size: 1rem; font-weight: 400; letter-spacing: 0.5px; display: flex; justify-content: center; align-items: center; gap: 10px; }
+        .social-link { color: inherit; text-decoration: none; font-size: 1.5rem; transition: color 0.3s ease; }
+        .social-link:hover { color: var(--accent-purple); }
+        @media (max-width: 768px) { .dashboard-container { padding: 15px; } .main-grid { grid-template-columns: 1fr; } .card-value { font-size: 2rem; } .indicator-value { font-size: 2rem; } .time-filters { flex-wrap: wrap; justify-content: center; } }
     </style>
 </head>
 <body>
     <div class="dashboard-container">
         <main class="main-content">
             <div class="header">
-                <h1 class="text-center mb-4"><i class="fas fa-chart-line me-3" style="color: var(--accent-purple);"></i> Dashboard do Mercado Financeiro</h1>
+                <h1 class="text-center mb-4"><i class="fas fa-chart-line me-3" style="color: var(--accent-purple);"></i> Dashboard de Mercado</h1>
                 <div id="ticker-bar-container" class="stock-ticker"></div>
             </div>
             <div class="main-stock-info-container">
@@ -100,8 +102,12 @@
                 </div>
                 <div class="chart-canvas-container">
                     <canvas id="priceChart"></canvas>
-                    <div id="chart-spinner-overlay" class="chart-spinner-overlay">
+                    <div id="chart-spinner-overlay" class="chart-overlay hidden">
                         <div class="loading-spinner"></div>
+                    </div>
+                    <div id="chart-message-overlay" class="chart-overlay hidden">
+                        <i class="fas fa-store-slash fa-2x mb-3"></i>
+                        <span>O mercado está fechado.<br>Dados intradiários (1D) não estão disponíveis.</span>
                     </div>
                 </div>
             </div>
@@ -123,13 +129,16 @@
             </div>
         </main>
         <footer class="page-footer">
-            Desenvolvido por Enzo Varani
+            <span>Desenvolvido por Enzo Varani</span>
+            <a href="https://github.com/EnzoVarani" target="_blank" rel="noopener noreferrer" class="social-link" aria-label="GitHub Profile">
+                <i class="fab fa-github"></i>
+            </a>
         </footer>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
     <script>
         class DashboardAPI {
-            constructor() { this.baseURL = 'https://dashboard-do-mercado-financeiro-production.up.railway.app'; }
+            constructor() { this.baseURL = 'http://localhost:3001/api'; }
             async #fetchData(endpoint) {
                 try {
                     const response = await fetch(`${this.baseURL}${endpoint}`, { signal: AbortSignal.timeout(25000) });
@@ -144,6 +153,7 @@
                 }
             }
             fetchAllStocks(symbols) { return this.#fetchData(`/stocks/multiple?symbols=${symbols.join(',')}`); }
+            fetchStockData(symbol) { return this.#fetchData(`/stocks/${symbol}`); }
             fetchHistoricalData(symbol, range) { return this.#fetchData(`/stocks/${symbol}/historical?range=${range}`); }
             showErrorState(errorMessage) {
                 const errorId = `error-toast-${Date.now()}`;
@@ -163,7 +173,8 @@
                     low: '#stock-low', lastUpdate: '.last-update', chartPeriodChange: '#chart-period-change',
                     chartTitle: '#chart-main-title', indicatorSma20: '#indicator-sma20', indicatorSma20Label: '#indicator-sma20-label',
                     indicatorRsi: '#indicator-rsi', indicatorRsiLabel: '#indicator-rsi-label',
-                    indicatorMktcap: '#indicator-mktcap'
+                    indicatorMktcap: '#indicator-mktcap', chartCanvas: '#priceChart',
+                    chartSpinner: '#chart-spinner-overlay', chartMessage: '#chart-message-overlay'
                 };
                 this.chartInstance = null;
             }
@@ -196,7 +207,20 @@
                     this.updateLastUpdate(stockData);
                     this.updateChartTitle(stockData);
                     this.updateIndicators(stockData);
+                    this.addUpdateAnimation();
                 } catch (error) { console.error('❌ Erro ao atualizar interface:', error); }
+            }
+            addUpdateAnimation() {
+                const elementsToAnimate = [
+                    ...document.querySelectorAll('.main-stock-info-container .card'),
+                    ...document.querySelectorAll('.main-grid .card'),
+                    ...document.querySelectorAll('.indicators-grid .card')
+                ];
+                elementsToAnimate.forEach(card => {
+                    card.style.transition = 'transform 0.2s ease, box-shadow 0.2s ease';
+                    card.style.transform = 'scale(1.02)';
+                    setTimeout(() => { card.style.transform = 'scale(1)'; }, 200);
+                });
             }
             updateIndicators(data) {
                 const sma20El = document.querySelector(this.elements.indicatorSma20);
@@ -218,15 +242,15 @@
                     rsiLabelEl.className = `card-change ${rsiClass}`;
                     rsiLabelEl.textContent = rsiLabel;
                 } else { rsiEl.textContent = '--'; rsiLabelEl.innerHTML = ''; }
-
+                
                 const mktcapEl = document.querySelector(this.elements.indicatorMktcap);
-                if (data.marketCap) {
+                if(data.marketCap) {
                     mktcapEl.textContent = this.formatVolume(data.marketCap, true);
                 } else { mktcapEl.textContent = '--'; }
             }
             renderChart(historicalData) {
                 this.updateChartPeriodChange(historicalData);
-                const ctx = document.getElementById('priceChart').getContext('2d');
+                const ctx = document.querySelector(this.elements.chartCanvas)?.getContext('2d');
                 if (!ctx) return;
                 const labels = historicalData.map(data => new Date(data.date).toLocaleDateString('pt-BR'));
                 const prices = historicalData.map(data => data.price);
@@ -259,8 +283,21 @@
                 changeElement.className = `chart-period-change ${colorClass}`;
                 changeElement.innerHTML = `<i class="fas fa-chart-line"></i> ${sign}${percentChange.toFixed(2)}% no período`;
             }
-            showChartSpinner() { document.getElementById('chart-spinner-overlay').classList.remove('hidden'); }
-            hideChartSpinner() { document.getElementById('chart-spinner-overlay').classList.add('hidden'); }
+            toggleChartView(view) {
+                const spinner = document.querySelector(this.elements.chartSpinner);
+                const message = document.querySelector(this.elements.chartMessage);
+                const canvas = document.querySelector(this.elements.chartCanvas);
+                spinner.classList.add('hidden');
+                message.classList.add('hidden');
+                canvas.style.display = 'none';
+                if(view === 'spinner') spinner.classList.remove('hidden');
+                if(view === 'message') message.classList.remove('hidden');
+                if(view === 'chart') canvas.style.display = 'block';
+            }
+            toggleChartPeriodChange(visible) {
+                const el = document.querySelector(this.elements.chartPeriodChange);
+                if (el) { el.style.display = visible ? 'flex' : 'none'; }
+            }
             formatPrice(price) { if (typeof price !== 'number') return '--'; return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price); }
             formatVolume(volume, isMarketCap = false) {
                 if (!volume) return '--';
@@ -286,7 +323,7 @@
                 const el = document.querySelector(this.elements.lastUpdate);
                 if (el) {
                     const updateTime = new Date(data.lastUpdate);
-                    const status = data.isFallback ? '<span class="text-warning">Dados Simulados</span>' : '<span class="text-success">Mercado Aberto</span>';
+                    const status = data.isFallback ? '<span class="text-warning">Dados Simulados</span>' : `<span class="text-success">${data.marketState}</span>`;
                     el.innerHTML = `<i class="fas fa-sync-alt"></i> Última atualização: ${updateTime.toLocaleString('pt-BR')} | ${status} | Próxima atualização em: <span id="countdown">30s</span>`;
                 }
             }
@@ -298,42 +335,52 @@
                 this.ui = new DashboardUI();
                 this.currentSymbol = initialSymbol;
                 this.tickerSymbols = ['ITUB4', 'VALE3', 'ABEV3', 'BBDC4', 'BPAC11'];
+                this.mainStockData = null;
                 this.countdown = 60;
                 this.updateInterval = null;
             }
             async initialize() {
                 this.setupEventListeners();
-                this.ui.showChartSpinner();
-                await this.fullUpdate();
+                this.ui.toggleChartView('spinner');
+                await this.refreshAllData();
                 this.startAutoUpdate();
             }
-            async fullUpdate() {
-                try {
+            async refreshAllData() {
+                 try {
                     const allSymbolsToFetch = [...new Set([this.currentSymbol, ...this.tickerSymbols])];
                     const allStockData = await this.api.fetchAllStocks(allSymbolsToFetch);
-                    const mainStockData = allStockData.find(stock => stock.symbol === this.currentSymbol);
+                    this.mainStockData = allStockData.find(stock => stock.symbol === this.currentSymbol);
                     const tickerStockData = allStockData.filter(stock => stock.symbol !== this.currentSymbol);
-                    const activeRange = document.querySelector('.time-filter.active')?.getAttribute('data-range') || '1mo';
-                    const chartPromise = this.api.fetchHistoricalData(this.currentSymbol, activeRange).catch(e => []);
                     
                     this.ui.renderTickerBar(tickerStockData);
-                    if (mainStockData) {
-                        this.ui.updateDisplay(mainStockData);
+                    if (this.mainStockData) {
+                        this.ui.updateDisplay(this.mainStockData);
                     }
-                    
-                    const chartData = await chartPromise;
-                    this.ui.renderChart(chartData);
+                    const activeRange = document.querySelector('.time-filter.active')?.getAttribute('data-range') || '1mo';
+                    await this.handleRangeChange(activeRange);
                 } catch (error) {
                     console.error("Falha na atualização completa dos dados.", error);
-                } finally {
-                    this.ui.hideChartSpinner();
+                    this.ui.toggleChartView('message');
                 }
             }
             async handleRangeChange(range) {
-                this.ui.showChartSpinner();
+                if (range === '1d' && this.mainStockData?.marketState !== 'REGULAR') {
+                    this.ui.toggleChartView('message');
+                    this.ui.toggleChartPeriodChange(false);
+                    return;
+                }
+                
+                this.ui.toggleChartView('spinner');
+                this.ui.toggleChartPeriodChange(true);
+
                 const historicalData = await this.api.fetchHistoricalData(this.currentSymbol, range).catch(e => []);
-                this.ui.renderChart(historicalData);
-                this.ui.hideChartSpinner();
+                if (historicalData.length > 1) {
+                    this.ui.renderChart(historicalData);
+                    this.ui.toggleChartView('chart');
+                } else {
+                    this.ui.toggleChartView('message');
+                    this.ui.toggleChartPeriodChange(false);
+                }
             }
             startAutoUpdate() {
                 if (this.updateInterval) clearInterval(this.updateInterval);
@@ -343,7 +390,7 @@
                     if (el) el.textContent = this.countdown + 's';
                     if (this.countdown <= 0) {
                         this.countdown = 60;
-                        this.fullUpdate();
+                        this.refreshAllData();
                     }
                 }, 1000);
             }

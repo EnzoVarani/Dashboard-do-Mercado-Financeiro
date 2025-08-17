@@ -6,7 +6,7 @@
 
 Uma plataforma de visualização de dados do mercado financeiro em tempo real, construída do zero com Node.js no backend e JavaScript puro no frontend.
 
-**[Link para o Deploy do Projeto (Vercel)](https://coloque-seu-link-aqui.vercel.app)**
+**[Link para o Deploy do Projeto (Vercel)](https://dashboard-do-mercado-financeiro.vercel.app/)**
 
 <table align="center">
   <tr>
@@ -64,8 +64,9 @@ cd pr
 cd backend
 npm install
 
+# Entre no site https://brapi.dev/ e clique em Obter Chave de API, faça login com GitHub ou Google e copie sua chave API.
 # Crie um arquivo .env na pasta /backend e adicione sua chave da Brapi
-# BRAPI_API_TOKEN=SUA_CHAVE_AQUI
+BRAPI_API_TOKEN=SUA_CHAVE_AQUI
 
 npm run dev
 # O servidor estará rodando em http://localhost:3001
@@ -87,9 +88,8 @@ Seu navegador abrirá automaticamente no endereço http://127.0.0.1:5500 (ou uma
 
 [ ] Migração para React: Evoluir o frontend de Vanilla JS para React, componentizando a aplicação e gerenciando o estado de forma mais eficiente.
 
-Autor
-Enzo Varani
+Autor: Enzo Varani
 
 GitHub: @EnzoVarani
 
-LinkedIn: (https://www.linkedin.com/in/enzo-varani-68483b264)
+LinkedIn: https://www.linkedin.com/in/enzo-varani-68483b264

@@ -54,12 +54,20 @@ class StockService {
             const change = quoteData.regularMarketChange || 0;
 
             const processedData = {
-                symbol: quoteData.symbol, name: quoteData.longName, price: quoteData.regularMarketPrice,
-                change: change, changePercent: quoteData.regularMarketChangePercent || 0,
-                volume: quoteData.regularMarketVolume, high: quoteData.regularMarketDayHigh, low: quoteData.regularMarketDayLow,
+                symbol: quoteData.symbol,
+                name: quoteData.longName,
+                price: quoteData.regularMarketPrice,
+                change: change,
+                changePercent: quoteData.regularMarketChangePercent || 0,
+                volume: quoteData.regularMarketVolume,
+                high: quoteData.regularMarketDayHigh,
+                low: quoteData.regularMarketDayLow,
                 previousClose: quoteData.regularMarketPrice - change,
                 lastUpdate: new Date(quoteData.regularMarketTime).toISOString(),
-                marketCap: quoteData.marketCap, sma20: sma20, rsi14: rsi14,
+                marketCap: quoteData.marketCap,
+                marketState: quoteData.marketState,
+                sma20: sma20,
+                rsi14: rsi14,
             };
             this.cache.set(cacheKey, { timestamp: now, data: processedData });
             return processedData;
@@ -71,11 +79,12 @@ class StockService {
     async getStockHistoricalData(symbol, range) {
         try {
             const token = process.env.BRAPI_API_TOKEN;
-            const url = `https://brapi.dev/api/quote/${symbol}?range=${range}&interval=1d&token=${token}`;
+            const url = `https://brapi.dev/api/quote/${symbol}?range=${range}&interval=1d&fundamental=false&dividends=false&token=${token}`;
             const response = await axios.get(url, { timeout: 25000 });
             const result = response.data?.results?.[0];
-            if (!result || !result.historicalDataPrice) { throw new Error(`Dados históricos não encontrados para ${symbol}`); }
-            
+            if (!result || !result.historicalDataPrice) {
+                return [];
+            }
             const formattedData = result.historicalDataPrice.map(point => ({
                 date: new Date(point.date * 1000).toISOString(),
                 price: point.close
