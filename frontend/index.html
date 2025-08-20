@@ -107,7 +107,7 @@
                     </div>
                     <div id="chart-message-overlay" class="chart-overlay hidden">
                         <i class="fas fa-store-slash fa-2x mb-3"></i>
-                        <span>O mercado está fechado.<br>Dados intradiários (1D) não estão disponíveis.</span>
+                        <span>O mercado não abriu neste dia.<br>Dados não estão disponíveis.</span>
                     </div>
                 </div>
             </div>
@@ -249,10 +249,15 @@
                 } else { mktcapEl.textContent = '--'; }
             }
             renderChart(historicalData) {
+                if (!historicalData || historicalData.length === 0) {
+                    this.toggleChartView('message');
+                    this.toggleChartPeriodChange(false);
+                    return;
+                }
                 this.updateChartPeriodChange(historicalData);
                 const ctx = document.querySelector(this.elements.chartCanvas)?.getContext('2d');
                 if (!ctx) return;
-                const labels = historicalData.map(data => new Date(data.date).toLocaleDateString('pt-BR'));
+                const labels = historicalData.map(data => new Date(data.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }));
                 const prices = historicalData.map(data => data.price);
                 if (this.chartInstance) { this.chartInstance.destroy(); }
                 const gradient = ctx.createLinearGradient(0, 0, 0, 400);
@@ -364,20 +369,20 @@
                 }
             }
             async handleRangeChange(range) {
-                if (range === '1d' && this.mainStockData?.marketState !== 'REGULAR') {
-                    this.ui.toggleChartView('message');
-                    this.ui.toggleChartPeriodChange(false);
-                    return;
-                }
-                
                 this.ui.toggleChartView('spinner');
                 this.ui.toggleChartPeriodChange(true);
 
-                const historicalData = await this.api.fetchHistoricalData(this.currentSymbol, range).catch(e => []);
-                if (historicalData.length > 1) {
-                    this.ui.renderChart(historicalData);
-                    this.ui.toggleChartView('chart');
-                } else {
+                try {
+                    const historicalData = await this.api.fetchHistoricalData(this.currentSymbol, range);
+                    
+                    if (historicalData && historicalData.length > 1) {
+                        this.ui.renderChart(historicalData);
+                        this.ui.toggleChartView('chart');
+                    } else {
+                        this.ui.toggleChartView('message');
+                        this.ui.toggleChartPeriodChange(false);
+                    }
+                } catch (error) {
                     this.ui.toggleChartView('message');
                     this.ui.toggleChartPeriodChange(false);
                 }
