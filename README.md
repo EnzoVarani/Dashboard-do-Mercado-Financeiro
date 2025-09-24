@@ -7,6 +7,7 @@
 Uma plataforma de visualização de dados do mercado financeiro em tempo real, construída do zero com Node.js no backend e JavaScript puro no frontend.
 
 **[Link para o Deploy do Projeto (Vercel)](https://dashboard-do-mercado-financeiro.vercel.app/)**
+(Atualmente está offline pois o plano expirou)
 
 <table align="center">
   <tr>
